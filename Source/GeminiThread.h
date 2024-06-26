@@ -21,19 +21,54 @@
 
  */
 
-#ifndef DATATHREADPLUGIN_H_DEFINED
-#define DATATHREADPLUGIN_H_DEFINED
+#ifndef GEMINITHREAD_H_DEFINED
+#define GEMINITHREAD_H_DEFINED
 
 #include <DataThreadHeaders.h>
 
-class DataThreadPlugin : public DataThread
+namespace GeminiThreadNode {
+
+class GeminiThread : public DataThread
 {
 public:
-	/** The class constructor, used to initialize any members. */
-	DataThreadPlugin(SourceNode* sn);
+    /** Default parameters */
+    const int DEFAULT_PORT = 51002;
+    const float DEFAULT_SAMPLE_RATE = 30000.0f;
+    const float DEFAULT_DATA_SCALE = 1.0f;
+    const float DEFAULT_DATA_OFFSET = 0.0f;
+    const int DEFAULT_BUF_SIZE = 10000;
 
-	/** The class destructor, used to deallocate memory */
-	~DataThreadPlugin();
+    /** Parameter limits */
+    const float MIN_DATA_SCALE = 0.0f;
+    const float MAX_DATA_SCALE = 9999.9f;
+    const float MIN_DATA_OFFSET = 0;
+    const float MAX_DATA_OFFSET = 65536;
+    const float MIN_PORT = 1023;
+    const float MAX_PORT = 65535;
+    const float MIN_SAMPLE_RATE = 0;
+    const float MAX_SAMPLE_RATE = 50000.0f;
+
+    // socket
+    int sockfd = -1;
+
+    // label params
+    int port;
+    float sample_rate;
+    float data_scale;
+    float data_offset;
+
+    // state vars
+    bool connected = false;
+    bool error_flag;
+
+	/** Constructor */
+	GeminiThread(SourceNode* sn);
+
+	/** Destructor */
+	~GeminiThread();
+
+    /** Create the DataThread object*/
+    static DataThread* createDataThread(SourceNode* sn);
 
     // ------------------------------------------------------------
     //                  PURE VIRTUAL METHODS
@@ -77,6 +112,17 @@ public:
     // ** Allows the DataThread plugin to handle a config message while acquisition is not active. */
     String handleConfigMessage(String msg) override;
 
+
+    /** Connects to the socket */
+    bool connectSocket();
+
+    /** Disconnects the socket */
+    void disconnectSocket();
+
+    /** Returns if any errors were thrown during acquisition, such as invalid headers or unable to read from socket */
+    bool errorFlag();
 };
+
+}
 
 #endif

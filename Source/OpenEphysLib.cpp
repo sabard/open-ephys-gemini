@@ -20,18 +20,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <PluginInfo.h>
-
-#include "DataThreadPlugin.h"
-
 #include <string>
-
 #ifdef WIN32
 #include <Windows.h>
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT __attribute__((visibility("default")))
 #endif
+
+#include <PluginInfo.h>
+
+#include "GeminiThread.h"
 
 using namespace Plugin;
 
@@ -43,8 +42,8 @@ extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo* info)
 	Should not be changed to ensure it is always equal to the one used in the latest codebase.
 	The GUI refuses to load plugins with mismatched API versions */
 	info->apiVersion = PLUGIN_API_VER;
-	info->name = "DataThreadLibrary"; // <---- update
-	info->libVersion = "0.1.0"; // <---- update
+	info->name = "Gemini";
+	info->libVersion = "0.0.1";
 	info->numPlugins = NUM_PLUGINS;
 }
 
@@ -52,14 +51,12 @@ extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 {
 	switch (index)
 	{
-		//one case per plugin. This example is for a processor which connects directly to the signal chain
 	case 0:
 
 		info->type = Plugin::Type::DATA_THREAD;
-		info->dataThread.name = "Custom Source"; // <---- update 
-		info->dataThread.creator = &createDataThread<DataThreadPlugin>; // <---- update
+		info->dataThread.name = "Gemini";
+		info->dataThread.creator = &createDataThread<GeminiThreadNode::GeminiThread>;
 		break;
-
 	default:
 		return -1;
 		break;
