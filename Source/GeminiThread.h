@@ -32,11 +32,15 @@ class GeminiThread : public DataThread
 {
 public:
     /** Default parameters */
+    // GUI
     const int DEFAULT_PORT = 51002;
     const float DEFAULT_SAMPLE_RATE = 30000.0f;
     const float DEFAULT_DATA_SCALE = 1.0f;
     const float DEFAULT_DATA_OFFSET = 0.0f;
-    const int DEFAULT_BUF_SIZE = 10000;
+    // internal
+    const int DEFAULT_BUF_SIZE = 12000;
+    const int DEFAULT_NUM_CHANNELS = 192;
+    const int DEFAULT_NUM_SAMPLES = 30;
 
     /** Parameter limits */
     const float MIN_DATA_SCALE = 0.0f;
@@ -57,9 +61,23 @@ public:
     float data_scale;
     float data_offset;
 
+    // internal params
+    int num_channels;
+    int num_samp;
+
     // state vars
     bool connected = false;
     bool error_flag;
+    int64 total_samples;
+
+    // buffers
+    std::vector<std::byte> read_buffer;
+    std::vector<float> convbuf;
+    Array<int64> sampleNumbers;
+    Array<double> timestamps;
+    Array<uint64> ttlEventWords;
+
+
 
 	/** Constructor */
 	GeminiThread(SourceNode* sn);

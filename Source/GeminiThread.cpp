@@ -48,7 +48,13 @@ GeminiThread::GeminiThread(SourceNode* sn) : DataThread(sn)
     data_scale = DEFAULT_DATA_SCALE;
     data_offset = DEFAULT_DATA_OFFSET;
 
-    // sourceBuffers.add(new DataBuffer(num_channels, 10000)); // start with 2 channels and automatically resize
+    total_samples = 0;
+    eventState = 0;
+
+    num_channels = DEFAULT_NUM_CHANNELS;
+    num_samp = DEFAULT_NUM_SAMPLES;
+
+    sourceBuffers.add(new DataBuffer(num_channels, DEFAULT_BUF_SIZE));
 }
 
 std::unique_ptr<GenericEditor> GeminiThread::createEditor(SourceNode* sn)
@@ -130,28 +136,56 @@ bool GeminiThread::updateBuffer()
     printf("Gemini buffer update\n");
 
     n  = recvfrom(sockfd, (char *)buffer, DEFAULT_BUF_SIZE,
-            MSG_WAITALL, ( struct sockaddr *) &addr,
+            0, ( struct sockaddr *) &addr,
             &len);
 
     printf("%d\n", n);
+
+    for (int i = 0; i < num_samp; i++) {
+        sampleNumbers.set(i, total_samples++);
+        ttlEventWords.set(i, eventState);
+    }
+
+    sourceBuffers[0]->addToBuffer(convbuf.data(),
+        sampleNumbers.getRawDataPointer(),
+        timestamps.getRawDataPointer(),
+        ttlEventWords.getRawDataPointer(),
+        num_samp,
+        1
+    );
 
     return true;
 }
 
 bool GeminiThread::foundInputSource()
 {
-    return true;
+    return connected;
 }
 
 bool GeminiThread::startAcquisition()
 {
-    printf("Gemini acq start.\n");
+    resizeBuffers();
+
+    total_samples = 0;
+    eventState = 0;
+
+    error_flag = false;
+
+    startThread();
+
     return true;
 }
 
 bool GeminiThread::stopAcquisition()
 {
-    printf("Gemini acq stop.\n");
+    if (isThreadRunning())
+    {
+        signalThreadShouldExit();
+    }
+
+    waitForThreadToExit(500);
+
+    sourceBuffers[0]->clear();
     return true;
 }
 
@@ -175,7 +209,13 @@ bool GeminiThread::errorFlag()
 
 void GeminiThread::resizeBuffers()
 {
-
+    sourceBuffers[0]->resize(num_channels, DEFAULT_BUF_SIZE);
+    // read_buffer.resize(num_channels * num_samp * element_size + HEADER_SIZE);
+    convbuf.resize(num_channels * num_samp);
+    sampleNumbers.resize(num_samp);
+    timestamps.clear();
+    timestamps.insertMultiple(0, 0.0, num_samp);
+    ttlEventWords.resize(num_samp);
 }
 
 void GeminiThread::handleBroadcastMessage(String msg)
